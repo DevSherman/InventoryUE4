@@ -8,9 +8,6 @@ class UInputComponent;
 class USkeletalMeshComponent;
 class USceneComponent;
 class UCameraComponent;
-class UMotionControllerComponent;
-class UAnimMontage;
-class USoundBase;
 
 UCLASS(config = Game)
 class AInventoryUECharacter : public ACharacter
@@ -20,8 +17,8 @@ class AInventoryUECharacter : public ACharacter
 	//
 	UPROPERTY(EditAnywhere)
 	class UInteractionComponent* Interaction;
-	//UPROPERTY(EditAnywhere)
-	//class UInventoryComponent* Inventory;
+	UPROPERTY(EditAnywhere)
+	class UInventoryComponent* Inventory;
 	//
 
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)

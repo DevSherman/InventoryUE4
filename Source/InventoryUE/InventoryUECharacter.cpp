@@ -9,7 +9,7 @@
 
 #include "Interaction/InteractionComponent.h"
 #include "Item/ItemActor.h"
-//#include "Inventory/InventoryComponent.h"
+#include "Inventory/InventoryComponent.h"
 
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
@@ -36,7 +36,7 @@ AInventoryUECharacter::AInventoryUECharacter()
 
 
 	Interaction = CreateDefaultSubobject<UInteractionComponent>(TEXT("Interaction"));
-	//Inventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("Inventory"));
+	Inventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("Inventory"));
 }
 
 void AInventoryUECharacter::BeginPlay()
@@ -88,7 +88,7 @@ void AInventoryUECharacter::Interact()
 
 void AInventoryUECharacter::InventoryUI()
 {
-	//Inventory->ShowHideUI();
+	Inventory->ShowHideUI();
 }
 
 void AInventoryUECharacter::MoveForward(float Value)
