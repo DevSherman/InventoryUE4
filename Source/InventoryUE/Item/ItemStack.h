@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/Texture2D.h"
 #include "ItemStack.generated.h"
 
 USTRUCT()
@@ -14,11 +13,6 @@ public:
 	void UpdateCount(int Amount) { Count += Amount; }
 	bool HasItem() { return !StringID.IsEmpty(); }
 	bool IsFull() { return Count == MaxStack; }
-
-	bool operator== (FItemStack& other)
-	{
-		return StringID.Equals(other.StringID);
-	}
 
 	inline void Clear()
 	{
@@ -34,6 +28,8 @@ public:
 	FString DisplayName;
 	UPROPERTY(EditAnywhere)
 	FString StringID;
+	UPROPERTY(EditAnywhere)
+	class AItemActor* ItemActor;
 	UPROPERTY(EditAnywhere)
 	bool bCanStack = false;
 	UPROPERTY(EditAnywhere)

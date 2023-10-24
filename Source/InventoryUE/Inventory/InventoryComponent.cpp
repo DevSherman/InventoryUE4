@@ -2,12 +2,12 @@
 #include "InventoryUI.h"
 #include "InventoryContainerUI.h"
 #include "../Item/ItemActor.h"
+#include "ItemSlotUI.h"
 #include "Utls.h"
 #include <Kismet/GameplayStatics.h>
 
 UInventoryComponent::UInventoryComponent()
 {
-    W_InventoryUI = Utls::LoadBlueprintFromPath<UInventoryUI>("WidgetBlueprint'/Game/Widgets/W_InventoryUI.W_InventoryUI'");
     PrimaryComponentTick.bCanEverTick = true;
 }
 
@@ -16,16 +16,19 @@ void UInventoryComponent::BeginPlay()
     Super::BeginPlay();
     PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 
-    if (W_InventoryUI == nullptr) { UE_LOG(LogTemp, Error, TEXT("[UInventoryComponent: %s] W_InventoryUI not found.")); return; }
+    if (!W_InventoryUI) { UE_LOG(LogTemp, Error, TEXT("[UInventoryComponent: %s] WidgetBlueprint 'W_InventoryUI' not set.")); return; }
+    if (!BP_ItemSlotUI) { UE_LOG(LogTemp, Error, TEXT("[UInventoryComponent: %s] WidgetBlueprint 'W_ItemSlotUI' not set.")); return; };  
+
     if (InventorySize.X * InventorySize.Y == 0) { UE_LOG(LogTemp, Error, TEXT("[UInventoryComponent: %s] InventorySize bad size.")); return; }
     if (ToolBarSize.X * ToolBarSize.Y == 0) { UE_LOG(LogTemp, Error, TEXT("[UInventoryComponent: %s] ToolBarSize bad size.")); return; }
 
     //Background Inventory and MouseSlot
     UI = CreateWidget<UInventoryUI>(GetWorld(), W_InventoryUI);
     if (!UI) { UE_LOG(LogTemp, Error, TEXT("[UInventoryComponent: %s] UI not initilizaed.")); return; }
+
     UI->Init(*this);
     UI->AddToViewport(0);
-    UI->ShowMouseSlot(bMouseItemSlotVisible);
+    UI->ShowMouseSlot(bOnDrag);
 
     if (Padding <= 0) Padding = 1.0f;
 
@@ -44,27 +47,181 @@ void UInventoryComponent::BeginPlay()
     UI->GetInventory()->Show(false);
 }
 
-void UInventoryComponent::SetCurrentItemSlotSelected(int ID)
+void UInventoryComponent::OnClick()
 {
-    SelectedItemSlotID = ID;
+    if (CurrentItemSlotID > -1 && ItemStackArray[CurrentItemSlotID].HasItem())
+    {
+        MoveStackToMouseSlot();
+    }
 }
 
-void UInventoryComponent::SetCurrentContainerSelected(int ID)
+void UInventoryComponent::OnClickRelease()
 {
-    CurrentContainerID = ID;
+    if (CurrentItemSlotID > -1)
+    {
+        if (bOnDrag && Cached_CurrentItemSlotID > -1)
+        {
+            if (ItemStackArray[Cached_CurrentItemSlotID].HasItem()) SwapSlots();
+            else MoveCurrentStack();
+        }
+        else
+        {
+            //if (CurrentContainerID > -1) //return to original slot
+            //else //drop mouseSlot
+        }
+    }
+}
+
+TSubclassOf<class UItemSlotUI> UInventoryComponent::GetItemSlotUI()
+{
+    return  BP_ItemSlotUI;
+}
+
+inline void UInventoryComponent::SetCurrentItemSlotSelected(int ID)
+{
+    if (!bOnDrag) CurrentItemSlotID = ID;
+    else Cached_CurrentItemSlotID = ID;
+
+    if (GEngine)
+        GEngine->AddOnScreenDebugMessage
+        (
+            -1, 1.0f, FColor::Green,
+            FString::Printf(TEXT("CurrentItemSlotID: %d - Cached_CurrentItemSlotID: %d"),
+            CurrentItemSlotID, Cached_CurrentItemSlotID)
+        );
+}
+
+inline void UInventoryComponent::SetCurrentContainerSelected(int ID)
+{
+    if (!bOnDrag) CurrentContainerID = ID;
+    else Cached_CurrentContainerID = ID;
 }
 
 void UInventoryComponent::RegisterItemSlotUI(UItemSlotUI& ItemSlotUI)
 {
-    ItemSlotsUI.Add(&ItemSlotUI);
-    ItemStacks.Add(FItemStack());
+    int Index = ItemSlotUIArray.Add(&ItemSlotUI);
+    ItemSlotUIArray[Index]->ID = Index; //inventory container displacement
+    ItemStackArray.Add(FItemStack());
+
+    //UE_LOG(LogTemp, Warning, TEXT("ItemSlotUIArray Index: %d ItemSlotUI ID: %d"), Index, ItemSlotUIArray[Index]->ID);
+}
+
+bool UInventoryComponent::AddItem(AItemActor* ItemActor)
+{
+    FItemStack ItemStack = ItemActor->BuildStack();
+
+    return CheckAvaliableSlot(ItemStack);
+}
+
+bool UInventoryComponent::CheckAvaliableSlot(FItemStack ItemStack)
+{
+    for (int slotID = 0; slotID < ItemStackArray.Num(); slotID++) //stacking
+    {
+        if (ItemStackArray[slotID].HasItem() && !ItemStackArray[slotID].IsFull())
+        {
+            if (ItemStackArray[slotID].StringID.Equals(ItemStack.StringID))
+            {
+                int TotalCount = ItemStackArray[slotID].Count + ItemStack.Count;
+
+                if (TotalCount <= ItemStackArray[slotID].MaxStack)
+                {
+                    ItemStackArray[slotID].SetCount(TotalCount);
+                    UpdateItemStackCount(slotID, TotalCount);
+                    return true;
+                }
+                else
+                {
+                    UpdateItemStackCount(slotID, ItemStackArray[slotID].MaxStack);
+
+                    FItemStack NewStack = ItemStack;
+                    int Remaining = TotalCount - ItemStackArray[slotID].MaxStack;
+                    NewStack.SetCount(Remaining);
+
+                    return CheckAvaliableSlot(NewStack);
+                }
+            }
+        }
+    }
+    for (int slotID = 0; slotID < ItemStackArray.Num(); slotID++) //fisrt empty slot
+    {
+        if (!ItemStackArray[slotID].HasItem())
+        {
+            SetItemStackSlot(slotID, ItemStack);
+            return true;
+        }
+    }
+    return false;
+}
+
+void UInventoryComponent::SetItemStackSlot(int SlotID, FItemStack ItemStack)
+{
+    ItemStackArray[SlotID] = ItemStack;
+    ItemSlotUIArray[SlotID]->Update(LoadIcon(ItemStack.StringID), ItemStack.Count);
+}
+
+UTexture2D* UInventoryComponent::LoadIcon(FString StringID)
+{
+    const FString _IconPath = IconsPath + StringID;
+    UTexture2D* Texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), NULL, *(_IconPath)));
+    if (Texture != nullptr) return Texture;
+    else return IconNotFoundTexture;
+}
+
+void UInventoryComponent::UpdateItemStackCount(int SlotID, int Count)
+{
+    ItemStackArray[SlotID].SetCount(Count);
+    ItemSlotUIArray[SlotID]->UpdateCount(Count);
+}
+
+void UInventoryComponent::MoveStackToMouseSlot()
+{
+    SetMouseSlot(ItemStackArray[CurrentItemSlotID]);
+    ClearSlot();
+}
+
+void UInventoryComponent::SetMouseSlot(FItemStack ItemStack)
+{
+    MouseItemStack = ItemStack;
+    UI->UpdateMouseSlot(LoadIcon(ItemStack.StringID), ItemStack.Count);
+    UI->ShowMouseSlot(true);
+
+    bOnDrag = true;
+}
+
+void UInventoryComponent::ClearSlot()
+{
+    //TODO: check container 
+    ItemStackArray[CurrentItemSlotID].Clear();
+    ItemSlotUIArray[CurrentItemSlotID]->Clear();
+}
+
+void UInventoryComponent::ClearMouseSlot()
+{
+    //MouseItemStack = FItemStack();
+    //clear?
+    UI->ShowMouseSlot(false);
+
+    bOnDrag = false;
+}
+
+void UInventoryComponent::SwapSlots()
+{
+    SetItemStackSlot(CurrentItemSlotID, ItemStackArray[Cached_CurrentItemSlotID]);
+    SetItemStackSlot(Cached_CurrentItemSlotID, MouseItemStack);
+    ClearMouseSlot();
+}
+
+void UInventoryComponent::MoveCurrentStack()
+{
+    SetItemStackSlot(Cached_CurrentItemSlotID, MouseItemStack);
+    ClearSlot();
+    ClearMouseSlot();
+    CurrentItemSlotID = Cached_CurrentItemSlotID;
 }
 
 void UInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
-    FVector2D MousePos;
-    if (PlayerController->GetMousePosition(MousePos.X, MousePos.Y))
-        UI->UpdateMousePos(MousePos);
+    UI->UpdateMousePos();
 }
 
 void UInventoryComponent::ShowHideUI()

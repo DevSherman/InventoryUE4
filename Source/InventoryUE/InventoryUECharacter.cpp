@@ -80,8 +80,11 @@ void AInventoryUECharacter::Interact()
 		AItemActor* Item = Interaction->GetItemActor();
 		if (Item->GetType() == EItemType::PICKABLE)
 		{
-			Interaction->Clear();
-			//Inventory->AddItem(Item);
+			if (Inventory->AddItem(Item))
+			{
+				Interaction->Clear();
+				Item->Destroy();
+			}
 		}
 	}
 }

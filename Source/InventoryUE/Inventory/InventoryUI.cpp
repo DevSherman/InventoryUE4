@@ -4,10 +4,25 @@
 #include "Components/CanvasPanelSlot.h"
 #include "InventoryComponent.h"
 #include "Utls.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
 
 void UInventoryUI::NativeConstruct()
 {
 	bIsFocusable = true;
+}
+
+FReply UInventoryUI::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	Inventory->OnClick();
+	return FReply::Handled();
+}
+
+FReply UInventoryUI::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	UE_LOG(LogTemp, Error, TEXT("[UInventoryUI] OnClickRelease"));
+	Inventory->OnClickRelease();
+	return FReply::Handled();
 }
 
 FReply UInventoryUI::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
@@ -22,9 +37,6 @@ void UInventoryUI::Init(UInventoryComponent& _Inventory)
 {
 	this->Inventory = &_Inventory;
 
-	BP_ItemSlotUI = Utls::LoadBlueprintFromPath<UItemSlotUI>("WidgetBlueprint'/Game/Widgets/W_ItemSlotUI.W_ItemSlotUI'");
-	if (!BP_ItemSlotUI) return;
-
 	MouseItemSlotUI->SetVisibility(ESlateVisibility::HitTestInvisible);
 	MouseItemSlotUI->Init(*Inventory, -2, false);
 	MouseItemSlotUI_Slot = Cast<UCanvasPanelSlot>(MouseItemSlotUI->Slot);
@@ -38,19 +50,15 @@ void UInventoryUI::ShowMouseSlot(bool bValue)
 	MouseItemSlotUI->SetRenderOpacity(bValue ? 1.0f : 0.0f);
 }
 
-void UInventoryUI::UpdateMousePos(FVector2D Pos)
+void UInventoryUI::UpdateMousePos()
 {
+	FVector2D Pos = UWidgetLayoutLibrary::GetMousePositionOnViewport(GetWorld());
 	MouseItemSlotUI_Slot->SetPosition(Pos);
 }
 
-UInventoryContainerUI* UInventoryUI::GetInventory()
+void UInventoryUI::UpdateMouseSlot(UTexture2D* Icon, int Count)
 {
-	return InventoryContainerUI;
-}
-
-UInventoryContainerUI* UInventoryUI::GetToolBar()
-{
-	return ToolBarContainerUI;
+	MouseItemSlotUI->Update(Icon, Count);
 }
 
 

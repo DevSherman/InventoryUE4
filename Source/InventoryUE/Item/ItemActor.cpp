@@ -2,8 +2,8 @@
 
 AItemActor::AItemActor()
 {
+	RootComponent = Pivot = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Pivot"));
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
-	RootComponent = Mesh;
 	Mesh->SetRenderCustomDepth(true);
 	Mesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Block);
 }

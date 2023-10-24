@@ -17,27 +17,20 @@ public:
 	void UpdateCount(int Amount);
 	void Clear();
 
-protected:
-	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent);
-	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent);
-
-public:
 	int ID = -1;
 
 protected:
-	UPROPERTY(EditAnywhere)
-	FLinearColor DefaultUIState = FLinearColor::White;
-	UPROPERTY(EditAnywhere)
-	FLinearColor SelectedUIState = FLinearColor::Gray;
+	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
 
-	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	class UImage* BackgroundImage;
-	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	class UImage* ItemImage;
-	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	class UTextBlock* CountBlock;
-	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	class UTextBlock* IndexBlock;
+protected:
+	UPROPERTY(EditAnywhere) FLinearColor DefaultUIState = FLinearColor::White;
+	UPROPERTY(EditAnywhere) FLinearColor SelectedUIState = FLinearColor::Gray;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget)) class UImage* BackgroundImage;
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget)) class UImage* ItemImage;
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget)) class UTextBlock* CountBlock;
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget)) class UTextBlock* IndexBlock;
 
 private:
 	class UInventoryComponent* Inventory;

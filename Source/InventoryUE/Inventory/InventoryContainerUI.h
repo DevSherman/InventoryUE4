@@ -6,9 +6,6 @@
 #include "Blueprint/UserWidget.h"
 #include "InventoryContainerUI.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class INVENTORYUE_API UInventoryContainerUI : public UUserWidget
 {
@@ -29,6 +26,10 @@ public:
 	void Show(bool bValue);
 
 protected:
+	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent);
+	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent);
+
+protected:
 	UPROPERTY(EditAnywhere)
 	int CurrentItemSlotID = -1;
 	UPROPERTY(EditAnywhere)
@@ -39,7 +40,6 @@ protected:
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget)) class UOverlay* OverlayPanel;
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget)) class UWrapBox* BoxContainer;
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget)) class UImage* BackgroundImage;
-	UPROPERTY(EditAnywhere)	TSubclassOf<class UItemSlotUI> BP_ItemSlotUI;
 
 private:
 	class UInventoryComponent* Inventory;

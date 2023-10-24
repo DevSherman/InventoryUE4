@@ -18,33 +18,53 @@ public:
     bool IsOpened() { return bInventoryOpened; }
     void ResetInventory() { bInventoryOpened = false; }
 
-    void SetCurrentItemSlotSelected(int ID);
-    void SetCurrentContainerSelected(int ID);
+    inline void SetCurrentItemSlotSelected(int ID);
+    inline void SetCurrentContainerSelected(int ID);
 
     void RegisterItemSlotUI(class UItemSlotUI& ItemSlotUI);
+    bool AddItem(class AItemActor* ItemActor);
 
+    void OnClick();
+    void OnClickRelease();
+
+    TSubclassOf<class UItemSlotUI> GetItemSlotUI();
+
+private:
+    UTexture2D* LoadIcon(FString StringID);
+    bool CheckAvaliableSlot(struct FItemStack ItemStack);
+    void SetItemStackSlot(int SlotID, FItemStack ItemStack);
+    void UpdateItemStackCount(int SlotID, int Count);
+
+    void MoveStackToMouseSlot();
+    void SetMouseSlot(FItemStack ItemStack);
+    void ClearSlot();
+    void ClearMouseSlot();
+    void SwapSlots();
+    void MoveCurrentStack();
 
 protected:
     virtual void BeginPlay() override;
     virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-private:
-
 protected:
     UPROPERTY(EditAnywhere) TSubclassOf<class UInventoryUI> W_InventoryUI;
+    UPROPERTY(EditAnywhere)	TSubclassOf<class UItemSlotUI> BP_ItemSlotUI;
     UPROPERTY(EditAnywhere) FVector2D InventorySize = { 8, 4 };
     UPROPERTY(EditAnywhere) FVector2D ToolBarSize = { 8, 1 };
     UPROPERTY(EditAnywhere) float SlotUISize = 100.0f;
     UPROPERTY(EditAnywhere) float Padding = 1.0f;
     UPROPERTY(EditAnywhere) FVector2D ToolBarPos = { 0, 400 };
     UPROPERTY(EditAnywhere) FVector2D InventoryPos = { 0, 0 };
+    UPROPERTY(EditAnywhere) FString IconsPath = "/Game/Textures/Icon/Item/";
+    UPROPERTY(EditAnywhere) UTexture2D* IconNotFoundTexture;
 
 private:
     class APlayerController* PlayerController;
     class UInventoryUI* UI;
 
-    TArray<class UItemSlotUI*> ItemSlotsUI;
-    TArray<struct FItemStack> ItemStacks;
+    TArray<class UItemSlotUI*> ItemSlotUIArray;
+    TArray<struct FItemStack> ItemStackArray;
+    FItemStack MouseItemStack;
 
     //TArray<class UItemSlotUI*> ExternalItemSlotsUI;
     //TArray<struct FItemStack> ExternalItemStacks;
@@ -52,10 +72,12 @@ private:
     bool bInventoryOpened = false;
     bool bOnSplitMode = false;
 
-    int SelectedItemSlotID = -1; //current slot
+    int CurrentItemSlotID = -1; //current slot
     int CurrentContainerID = -1; //container
-    int ItemSlotDragID = -1; //aux when drag event
+    
+    int Cached_CurrentItemSlotID = -1; //current slot aux
+    int Cached_CurrentContainerID = -1; //container aux
 
-    bool bMouseItemSlotVisible = false;
+    bool bOnDrag = false;
     bool bOutOfAreas = true;
 };

@@ -23,16 +23,31 @@ public:
 	void ShowOutline(bool Value, int Index = 2);
 	void DestroyActor();
 
-	FString GetDisplayName() { return Stack.DisplayName; }
-	FString GetStringID() { return Stack.StringID; }
-	FItemStack GetStack() { return Stack; }
+	FString GetDisplayName() { return DisplayName; }
+	FString GetStringID() { return StringID; }
+
+	FItemStack BuildStack()
+	{
+		FItemStack ItemStack;
+		ItemStack.DisplayName = DisplayName;
+		ItemStack.StringID = StringID;
+		ItemStack.ItemActor = this;
+		ItemStack.bCanStack = bCanStack;
+		ItemStack.MaxStack = MaxStack;
+		ItemStack.Count = Count;
+		return ItemStack;
+	}
+
 	EItemType GetType() { return ItemType; }
 
 protected:
-	UPROPERTY(EditAnywhere, Category = "Item")
-	class UStaticMeshComponent* Mesh;
-	UPROPERTY(EditAnywhere, Category = "Item")
-	EItemType ItemType;
-	UPROPERTY(EditAnywhere, Category = "Item")
-	struct FItemStack Stack;
+	UPROPERTY(EditAnywhere, Category = "Item") class UStaticMeshComponent* Pivot;
+	UPROPERTY(EditAnywhere, Category = "Item") class UStaticMeshComponent* Mesh;
+	UPROPERTY(EditAnywhere, Category = "Item") EItemType ItemType;
+
+	UPROPERTY(EditAnywhere, Category = "ItemStack") FString DisplayName;
+	UPROPERTY(EditAnywhere, Category = "ItemStack")	FString StringID;
+	UPROPERTY(EditAnywhere, Category = "ItemStack")	bool bCanStack = false;
+	UPROPERTY(EditAnywhere, Category = "ItemStack")	int MaxStack = 1;
+	UPROPERTY(EditAnywhere, Category = "ItemStack")	int Count = 1;
 };

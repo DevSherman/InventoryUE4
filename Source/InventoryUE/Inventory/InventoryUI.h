@@ -14,15 +14,19 @@ class INVENTORYUE_API UInventoryUI : public UUserWidget
 public:
     void Init(class UInventoryComponent& Inventory);
     void ShowMouseSlot(bool bValue);
-    void UpdateMousePos(FVector2D Pos);
+    void UpdateMousePos();
+    void UpdateMouseSlot(UTexture2D* Icon, int Count);
 
-    class UInventoryContainerUI* GetInventory();
-    class UInventoryContainerUI* GetToolBar();
+    inline class UInventoryContainerUI* GetInventory() { return InventoryContainerUI; }
+    inline class UInventoryContainerUI* GetToolBar() { return ToolBarContainerUI; }
 
 
 protected:
     virtual void NativeConstruct() override;
+    virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+    virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
     virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
+    
 
 protected:
 
@@ -33,10 +37,8 @@ protected:
     UPROPERTY(BlueprintReadWrite, meta = (BindWidget)) class UItemSlotUI* MouseItemSlotUI;
 
     class UCanvasPanelSlot* MouseItemSlotUI_Slot; //mouse itemslot (panel slot)
-    struct FItemStack MouseItemStack = FItemStack();
 
 private:
     class UInventoryComponent* Inventory;
-
     class UItemSlotUI* CurrentUISlot;
 };
