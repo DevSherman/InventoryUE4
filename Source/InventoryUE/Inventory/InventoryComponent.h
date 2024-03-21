@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Components/SceneComponent.h"
 #include "../Item/ItemStack.h"
+#include "Types.h"
 #include "InventoryComponent.generated.h"
 
 
@@ -24,7 +25,7 @@ public:
     void RegisterItemSlotUI(class UItemSlotUI& ItemSlotUI);
     bool AddItem(class AItemActor* ItemActor);
 
-    void OnClick();
+    void OnClick(EMouseButton button);
     void OnClickRelease();
 
     TSubclassOf<class UItemSlotUI> GetItemSlotUI();

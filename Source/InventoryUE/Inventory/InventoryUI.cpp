@@ -14,13 +14,23 @@ void UInventoryUI::NativeConstruct()
 
 FReply UInventoryUI::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	Inventory->OnClick();
+	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton) Inventory->OnClick(EMouseButton::LEFT);
+	if (InMouseEvent.GetEffectingButton() == EKeys::RightMouseButton) Inventory->OnClick(EMouseButton::RIGHT);
+	if (InMouseEvent.GetEffectingButton() == EKeys::MiddleMouseButton) Inventory->OnClick(EMouseButton::MIDDLE);
+
+	return FReply::Handled();
+}
+
+FReply UInventoryUI::NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	if (InMouseEvent.GetWheelDelta() < 0) Inventory->OnClick(EMouseButton::SCROLL_DOWN);
+	if (InMouseEvent.GetWheelDelta() > 0) Inventory->OnClick(EMouseButton::SCROLL_UP);
+
 	return FReply::Handled();
 }
 
 FReply UInventoryUI::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	UE_LOG(LogTemp, Error, TEXT("[UInventoryUI] OnClickRelease"));
 	Inventory->OnClickRelease();
 	return FReply::Handled();
 }

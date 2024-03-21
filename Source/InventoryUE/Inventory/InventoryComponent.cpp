@@ -47,11 +47,41 @@ void UInventoryComponent::BeginPlay()
     UI->GetInventory()->Show(false);
 }
 
-void UInventoryComponent::OnClick()
+void UInventoryComponent::OnClick(EMouseButton button)
 {
-    if (CurrentItemSlotID > -1 && ItemStackArray[CurrentItemSlotID].HasItem())
+    // && ItemStackArray[CurrentItemSlotID].HasItem()
+
+    bool hasItem = ItemStackArray[CurrentItemSlotID].HasItem();
+
+    if (CurrentItemSlotID > -1)
     {
-        MoveStackToMouseSlot();
+        switch (button)
+        {
+        case LEFT:
+            if(hasItem) MoveStackToMouseSlot();
+            UE_LOG(LogTemp, Warning, TEXT("[UInventoryComponent::OnClick] LEFT"));
+            break;
+        case RIGHT:
+
+            UE_LOG(LogTemp, Warning, TEXT("[UInventoryComponent::OnClick] RIGHT"));
+            break;
+        case MIDDLE:
+
+            UE_LOG(LogTemp, Warning, TEXT("[UInventoryComponent::OnClick] MIDDLE"));
+            break;
+        case SCROLL_DOWN:
+
+            UE_LOG(LogTemp, Warning, TEXT("[UInventoryComponent::OnClick] SCROLL_DOWN"));
+            break;
+        case SCROLL_UP:
+
+            UE_LOG(LogTemp, Warning, TEXT("[UInventoryComponent::OnClick] SCROLL_UP"));
+            break;
+        default: break;
+        }
+
+
+       
     }
 }
 
@@ -70,6 +100,8 @@ void UInventoryComponent::OnClickRelease()
             //else //drop mouseSlot
         }
     }
+
+    UE_LOG(LogTemp, Warning, TEXT("[UInventoryUI] OnClickRelease"));
 }
 
 TSubclassOf<class UItemSlotUI> UInventoryComponent::GetItemSlotUI()
