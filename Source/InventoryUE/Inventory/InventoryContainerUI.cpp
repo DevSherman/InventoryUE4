@@ -40,6 +40,11 @@ void UInventoryContainerUI::Show(bool bValue)
 	this->SetVisibility(bValue ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 }
 
+void UInventoryContainerUI::OnUIClosedEvent()
+{
+
+}
+
 void UInventoryContainerUI::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
 	Inventory->SetCurrentContainerSelected(ContainerID);
@@ -49,3 +54,5 @@ void UInventoryContainerUI::NativeOnMouseLeave(const FPointerEvent& InMouseEvent
 {
 	Inventory->SetCurrentContainerSelected(-1);
 }
+
+

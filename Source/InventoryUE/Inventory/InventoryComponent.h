@@ -28,7 +28,7 @@ public:
     void OnClick(EMouseButton button);
     void OnClickRelease();
 
-    TSubclassOf<class UItemSlotUI> GetItemSlotUI();
+    TSubclassOf<class UItemSlotUI> GetItemSlotUI() const;
 
 private:
     UTexture2D* LoadIcon(FString StringID);

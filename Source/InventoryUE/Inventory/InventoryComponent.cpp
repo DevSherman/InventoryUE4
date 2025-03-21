@@ -49,14 +49,11 @@ void UInventoryComponent::BeginPlay()
 
 void UInventoryComponent::OnClick(EMouseButton button)
 {
-    // && ItemStackArray[CurrentItemSlotID].HasItem()
-
+    if (CurrentItemSlotID < 0) return;
     bool hasItem = ItemStackArray[CurrentItemSlotID].HasItem();
 
-    if (CurrentItemSlotID > -1)
+    switch (button)
     {
-        switch (button)
-        {
         case LEFT:
             if(hasItem) MoveStackToMouseSlot();
             UE_LOG(LogTemp, Warning, TEXT("[UInventoryComponent::OnClick] LEFT"));
@@ -78,10 +75,6 @@ void UInventoryComponent::OnClick(EMouseButton button)
             UE_LOG(LogTemp, Warning, TEXT("[UInventoryComponent::OnClick] SCROLL_UP"));
             break;
         default: break;
-        }
-
-
-       
     }
 }
 
@@ -104,7 +97,7 @@ void UInventoryComponent::OnClickRelease()
     UE_LOG(LogTemp, Warning, TEXT("[UInventoryUI] OnClickRelease"));
 }
 
-TSubclassOf<class UItemSlotUI> UInventoryComponent::GetItemSlotUI()
+TSubclassOf<class UItemSlotUI> UInventoryComponent::GetItemSlotUI() const
 {
     return  BP_ItemSlotUI;
 }
@@ -264,7 +257,7 @@ void UInventoryComponent::ShowHideUI()
     if (bInventoryOpened)
     {
         PlayerController->StopMovement();
-        PlayerController->SetInputMode(FInputModeUIOnly());
+        PlayerController->SetInputMode(FInputModeUIOnly().SetWidgetToFocus(UI->TakeWidget()));
         PlayerController->SetShowMouseCursor(true);
     }
     else

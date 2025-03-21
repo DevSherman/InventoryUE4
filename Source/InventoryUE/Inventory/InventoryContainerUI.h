@@ -6,6 +6,8 @@
 #include "Blueprint/UserWidget.h"
 #include "InventoryContainerUI.generated.h"
 
+DECLARE_DELEGATE(FOnUIClosedEvent);
+
 UCLASS()
 class INVENTORYUE_API UInventoryContainerUI : public UUserWidget
 {
@@ -24,6 +26,9 @@ public:
 	void Build(class UInventoryComponent& Inventory, int ID, int RowCount, int ColumnCount, FVector2D Size, float _Padding, bool bShowSlotID);
 	void SetPosition(FVector2D Pos);
 	void Show(bool bValue);
+
+	
+	void OnUIClosedEvent();
 
 protected:
 	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent);
