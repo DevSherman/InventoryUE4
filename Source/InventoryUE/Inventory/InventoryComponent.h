@@ -79,6 +79,6 @@ private:
     int Cached_CurrentItemSlotID = -1; //current slot aux
     int Cached_CurrentContainerID = -1; //container aux
 
-    bool bOnDrag = false;
+    bool bMouseHasItem = false;
     bool bOutOfAreas = true;
 };

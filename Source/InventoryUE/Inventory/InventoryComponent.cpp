@@ -28,7 +28,7 @@ void UInventoryComponent::BeginPlay()
 
     UI->Init(*this);
     UI->AddToViewport(0);
-    UI->ShowMouseSlot(bOnDrag);
+    UI->ShowMouseSlot(bMouseHasItem);
 
     if (Padding <= 0) Padding = 1.0f;
 
@@ -82,7 +82,7 @@ void UInventoryComponent::OnClickRelease()
 {
     if (CurrentItemSlotID > -1)
     {
-        if (bOnDrag && Cached_CurrentItemSlotID > -1)
+        if (bMouseHasItem && Cached_CurrentItemSlotID > -1)
         {
             if (ItemStackArray[Cached_CurrentItemSlotID].HasItem()) SwapSlots();
             else MoveCurrentStack();
@@ -104,21 +104,20 @@ TSubclassOf<class UItemSlotUI> UInventoryComponent::GetItemSlotUI() const
 
 inline void UInventoryComponent::SetCurrentItemSlotSelected(int ID)
 {
-    if (!bOnDrag) CurrentItemSlotID = ID;
+    if (!bMouseHasItem) CurrentItemSlotID = ID;
     else Cached_CurrentItemSlotID = ID;
 
-    if (GEngine)
-        GEngine->AddOnScreenDebugMessage
-        (
-            -1, 1.0f, FColor::Green,
-            FString::Printf(TEXT("CurrentItemSlotID: %d - Cached_CurrentItemSlotID: %d"),
-            CurrentItemSlotID, Cached_CurrentItemSlotID)
-        );
+    if (GEngine) GEngine->AddOnScreenDebugMessage
+    (
+        -1, 1.0f, FColor::Green,
+        FString::Printf(TEXT("CurrentItemSlotID: %d - Cached_CurrentItemSlotID: %d"),
+        CurrentItemSlotID, Cached_CurrentItemSlotID)
+    );
 }
 
 inline void UInventoryComponent::SetCurrentContainerSelected(int ID)
 {
-    if (!bOnDrag) CurrentContainerID = ID;
+    if (!bMouseHasItem) CurrentContainerID = ID;
     else Cached_CurrentContainerID = ID;
 }
 
@@ -210,7 +209,7 @@ void UInventoryComponent::SetMouseSlot(FItemStack ItemStack)
     UI->UpdateMouseSlot(LoadIcon(ItemStack.StringID), ItemStack.Count);
     UI->ShowMouseSlot(true);
 
-    bOnDrag = true;
+    bMouseHasItem = true;
 }
 
 void UInventoryComponent::ClearSlot()
@@ -226,20 +225,23 @@ void UInventoryComponent::ClearMouseSlot()
     //clear?
     UI->ShowMouseSlot(false);
 
-    bOnDrag = false;
+    bMouseHasItem = false;
 }
 
 void UInventoryComponent::SwapSlots()
 {
     SetItemStackSlot(CurrentItemSlotID, ItemStackArray[Cached_CurrentItemSlotID]);
     SetItemStackSlot(Cached_CurrentItemSlotID, MouseItemStack);
+
     ClearMouseSlot();
 }
 
 void UInventoryComponent::MoveCurrentStack()
 {
     SetItemStackSlot(Cached_CurrentItemSlotID, MouseItemStack);
-    ClearSlot();
+
+    if (CurrentItemSlotID != Cached_CurrentItemSlotID)  ClearSlot();
+
     ClearMouseSlot();
     CurrentItemSlotID = Cached_CurrentItemSlotID;
 }
