@@ -33,13 +33,13 @@ void UItemSlotUI::Clear()
 
 void UItemSlotUI::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	Inventory->SetCurrentItemSlotSelected(ID);
+	Inventory->UpdateCurrentItemSlotSelected(ID);
 	BackgroundImage->SetColorAndOpacity(SelectedUIState);
 }
 
 void UItemSlotUI::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
 {
-	Inventory->SetCurrentItemSlotSelected(-1);
+	Inventory->UpdateCurrentItemSlotSelected(-1);
 	BackgroundImage->SetColorAndOpacity(DefaultUIState);
 }
 

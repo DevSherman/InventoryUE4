@@ -47,54 +47,51 @@ void UInventoryComponent::BeginPlay()
     UI->GetInventory()->Show(false);
 }
 
-void UInventoryComponent::OnClick(EMouseButton button)
+void UInventoryComponent::OnMouseButtonPressed(EMouseButton button)
 {
     if (CurrentItemSlotID < 0) return;
-    bool hasItem = ItemStackArray[CurrentItemSlotID].HasItem();
 
     switch (button)
     {
-        case LEFT:
-            if(hasItem) MoveStackToMouseSlot();
-            UE_LOG(LogTemp, Warning, TEXT("[UInventoryComponent::OnClick] LEFT"));
-            break;
-        case RIGHT:
+        case LEFT:          LeftClickEvent();                   break;
+        case RIGHT:         /*contextual menu ?*/               break;
+        case MIDDLE:        MiddleClickEvent();                break;
+        case SCROLL_DOWN:   ScrollEvent(EMoveType::DECREASE);    break;
+        case SCROLL_UP:     ScrollEvent(EMoveType::INCREASE);    break;
 
-            UE_LOG(LogTemp, Warning, TEXT("[UInventoryComponent::OnClick] RIGHT"));
-            break;
-        case MIDDLE:
-
-            UE_LOG(LogTemp, Warning, TEXT("[UInventoryComponent::OnClick] MIDDLE"));
-            break;
-        case SCROLL_DOWN:
-
-            UE_LOG(LogTemp, Warning, TEXT("[UInventoryComponent::OnClick] SCROLL_DOWN"));
-            break;
-        case SCROLL_UP:
-
-            UE_LOG(LogTemp, Warning, TEXT("[UInventoryComponent::OnClick] SCROLL_UP"));
-            break;
-        default: break;
+        default:                                                break;
     }
 }
 
-void UInventoryComponent::OnClickRelease()
+void UInventoryComponent::OnMouseButtonRelease(EMouseButton button)
 {
-    if (CurrentItemSlotID > -1)
+    if(button == EMouseButton::RIGHT) return;
+
+    if (button == EMouseButton::MIDDLE)
     {
-        if (bMouseHasItem && Cached_CurrentItemSlotID > -1)
+        if (SplitSlotIDArray.Num() > 0)
         {
-            if (ItemStackArray[Cached_CurrentItemSlotID].HasItem()) SwapSlots();
-            else MoveCurrentStack();
+            SplitSlotIDArray.Empty();
+            MouseSlotID_Cache = -1;
         }
-        else
-        {
-            //if (CurrentContainerID > -1) //return to original slot
-            //else //drop mouseSlot
-        }
+
+        bOnSplitMode = false;
+        return;
     }
 
-    UE_LOG(LogTemp, Warning, TEXT("[UInventoryUI] OnClickRelease"));
+    if (button == EMouseButton::LEFT)
+    {
+        if (CurrentItemSlotID > -1)
+        {
+            if (bMouseHasItem) TryDropStackToSlot();
+            else
+            {
+                //if (CurrentContainerID > -1) //return to original slot
+                //else //drop mouseSlot
+            }
+        }
+        return;
+    }
 }
 
 TSubclassOf<class UItemSlotUI> UInventoryComponent::GetItemSlotUI() const
@@ -102,23 +99,16 @@ TSubclassOf<class UItemSlotUI> UInventoryComponent::GetItemSlotUI() const
     return  BP_ItemSlotUI;
 }
 
-inline void UInventoryComponent::SetCurrentItemSlotSelected(int ID)
+void UInventoryComponent::UpdateCurrentItemSlotSelected(int ID)
 {
-    if (!bMouseHasItem) CurrentItemSlotID = ID;
-    else Cached_CurrentItemSlotID = ID;
+    CurrentItemSlotID = ID;
+    return;
 
-    if (GEngine) GEngine->AddOnScreenDebugMessage
-    (
-        -1, 1.0f, FColor::Green,
-        FString::Printf(TEXT("CurrentItemSlotID: %d - Cached_CurrentItemSlotID: %d"),
-        CurrentItemSlotID, Cached_CurrentItemSlotID)
-    );
-}
-
-inline void UInventoryComponent::SetCurrentContainerSelected(int ID)
-{
-    if (!bMouseHasItem) CurrentContainerID = ID;
-    else Cached_CurrentContainerID = ID;
+    if (bOnSplitMode && ID != MouseSlotID_Cache)
+    {
+        if (ItemStackArray[ID].HasItem()) return;
+        if(SplitSlotIDArray.AddUnique(ID) > -1) SplitCurrentStack();
+    }
 }
 
 void UInventoryComponent::RegisterItemSlotUI(UItemSlotUI& ItemSlotUI)
@@ -197,53 +187,160 @@ void UInventoryComponent::UpdateItemStackCount(int SlotID, int Count)
     ItemSlotUIArray[SlotID]->UpdateCount(Count);
 }
 
+void UInventoryComponent::LeftClickEvent()
+{
+    bool slotHasItem = ItemStackArray[CurrentItemSlotID].HasItem();
+
+    if (bMouseHasItem)
+    {
+        if (slotHasItem) SwapSlots();
+        else DropMouseSlotToCurrentSlot();
+    }
+    else if (slotHasItem) MoveStackToMouseSlot();
+}
+
+void UInventoryComponent::MiddleClickEvent()
+{
+    bOnSplitMode = true;
+
+    FItemStack currentStack = ItemStackArray[CurrentItemSlotID];
+    if (!currentStack.bCanStack && currentStack.Count <= 1) return;
+    SplitItemStackCount = currentStack.Count;
+    SplitCurrentStack();
+}
+
+void UInventoryComponent::RightClickEvent()
+{
+
+}
+
+void UInventoryComponent::ScrollEvent(EMoveType MoveType)
+{
+
+}
+
+void UInventoryComponent::TryDropStackToSlot()
+{
+    if (CurrentSlotHasItem())
+    {
+        if (SlotsHasSameItem()) StackMouseSlotToCurrentSlot();
+        else SwapSlots();
+    }
+    else DropMouseSlotToCurrentSlot();
+}
+
 void UInventoryComponent::MoveStackToMouseSlot()
 {
     SetMouseSlot(ItemStackArray[CurrentItemSlotID]);
-    ClearSlot();
+    ClearSlot(CurrentItemSlotID);
+}
+
+void UInventoryComponent::StackMouseSlotToCurrentSlot()
+{
+    FItemStack currentStack = ItemStackArray[CurrentItemSlotID];
+
+    if (!currentStack.bCanStack) SwapSlots();
+    else
+    {
+        int sum = currentStack.Count + MouseItemStack.Count;
+        if (sum <= currentStack.MaxStack)
+        {
+            UpdateItemStackCount(CurrentItemSlotID, sum);
+            ClearMouseSlot();
+        }
+        else SwapSlots();
+    }
 }
 
 void UInventoryComponent::SetMouseSlot(FItemStack ItemStack)
 {
+    bMouseHasItem = true;
     MouseItemStack = ItemStack;
+    if(!bOnSplitMode) MouseSlotID_Cache = CurrentItemSlotID;
     UI->UpdateMouseSlot(LoadIcon(ItemStack.StringID), ItemStack.Count);
     UI->ShowMouseSlot(true);
-
-    bMouseHasItem = true;
 }
 
-void UInventoryComponent::ClearSlot()
+void UInventoryComponent::ClearSlot(int ID)
 {
-    //TODO: check container 
-    ItemStackArray[CurrentItemSlotID].Clear();
-    ItemSlotUIArray[CurrentItemSlotID]->Clear();
+    //TODO: check container
+    ItemStackArray[ID].Clear();
+    ItemSlotUIArray[ID]->Clear();
 }
 
 void UInventoryComponent::ClearMouseSlot()
 {
     //MouseItemStack = FItemStack();
-    //clear?
     UI->ShowMouseSlot(false);
-
     bMouseHasItem = false;
+    bOnSplitMode = false;
+    MouseSlotID_Cache = -1;
 }
 
 void UInventoryComponent::SwapSlots()
 {
-    SetItemStackSlot(CurrentItemSlotID, ItemStackArray[Cached_CurrentItemSlotID]);
-    SetItemStackSlot(Cached_CurrentItemSlotID, MouseItemStack);
-
+    SetItemStackSlot(MouseSlotID_Cache, ItemStackArray[CurrentItemSlotID]);
+    SetItemStackSlot(CurrentItemSlotID, MouseItemStack);
     ClearMouseSlot();
 }
 
-void UInventoryComponent::MoveCurrentStack()
+void UInventoryComponent::DropMouseSlotToCurrentSlot()
 {
-    SetItemStackSlot(Cached_CurrentItemSlotID, MouseItemStack);
-
-    if (CurrentItemSlotID != Cached_CurrentItemSlotID)  ClearSlot();
-
+    SetItemStackSlot(CurrentItemSlotID, MouseItemStack);
+    if (MouseSlotID_Cache != CurrentItemSlotID && !bOnSplitMode)  ClearSlot(MouseSlotID_Cache);
     ClearMouseSlot();
-    CurrentItemSlotID = Cached_CurrentItemSlotID;
+}
+
+void UInventoryComponent::SplitCurrentStack()
+{    
+    if (SplitSlotIDArray.Num() == 0)
+    {
+        FVector2D splitAmount = SplitStack(SplitItemStackCount, 2);
+        UpdateItemStackCount(CurrentItemSlotID, splitAmount.X);
+
+        FItemStack currentStack = ItemStackArray[CurrentItemSlotID];
+        currentStack.Count = splitAmount.Y;
+        SetMouseSlot(currentStack);
+    }
+    //else SpreadMode();
+}
+
+void UInventoryComponent::SpreadMode()
+{
+    if (SplitSlotIDArray.Num() > 0)
+    {
+        FVector2D splitAmount;
+        ClearMouseSlot();
+
+        if (SplitSlotIDArray.Num() == 1)
+        {
+            splitAmount = SplitStack(SplitItemStackCount, 2);
+            FItemStack currentStack = MouseItemStack;
+            SetItemStackSlot(SplitSlotIDArray[0], currentStack);
+            UpdateItemStackCount(SplitSlotIDArray[0], splitAmount.X);
+
+            UpdateItemStackCount(CurrentItemSlotID, splitAmount.Y);
+        }
+        else
+        {
+            splitAmount = SplitStack(SplitItemStackCount, SplitSlotIDArray.Num());
+
+            for (int i = 0; i < SplitSlotIDArray.Num() - 2; i++)
+            {
+                FItemStack currentStack = MouseItemStack;
+                SetItemStackSlot(SplitSlotIDArray[i], currentStack);
+                UpdateItemStackCount(SplitSlotIDArray[i], splitAmount.X);
+            }
+
+            UpdateItemStackCount(SplitSlotIDArray[SplitSlotIDArray.Num() - 1], splitAmount.Y);
+        }
+    }
+}
+
+FVector2D UInventoryComponent::SplitStack(int ItemStackCount, int SlotCount)
+{
+    int splitAmount = ItemStackCount / SlotCount;
+    return FVector2D(splitAmount + (ItemStackCount % 2 == 0 ? 0 : 1), splitAmount);
 }
 
 void UInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)

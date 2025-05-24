@@ -47,12 +47,12 @@ void UInventoryContainerUI::OnUIClosedEvent()
 
 void UInventoryContainerUI::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	Inventory->SetCurrentContainerSelected(ContainerID);
+	Inventory->UpdateCurrentContainerSelected(ContainerID);
 }
 
 void UInventoryContainerUI::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
 {
-	Inventory->SetCurrentContainerSelected(-1);
+	Inventory->UpdateCurrentContainerSelected(-1);
 }
 
 

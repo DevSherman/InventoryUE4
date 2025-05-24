@@ -6,6 +6,11 @@
 #include "Types.h"
 #include "InventoryComponent.generated.h"
 
+enum EMoveType
+{
+    INCREASE,
+    DECREASE
+};
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class INVENTORYUE_API UInventoryComponent : public USceneComponent
@@ -16,17 +21,17 @@ public:
 
     UInventoryComponent();
     void ShowHideUI();
-    bool IsOpened() { return bInventoryOpened; }
+    bool IsOpened() const { return bInventoryOpened; }
     void ResetInventory() { bInventoryOpened = false; }
 
-    inline void SetCurrentItemSlotSelected(int ID);
-    inline void SetCurrentContainerSelected(int ID);
+    void UpdateCurrentItemSlotSelected(int ID);
+    inline void UpdateCurrentContainerSelected(int ID) { CurrentContainerID = ID; }
 
     void RegisterItemSlotUI(class UItemSlotUI& ItemSlotUI);
     bool AddItem(class AItemActor* ItemActor);
 
-    void OnClick(EMouseButton button);
-    void OnClickRelease();
+    void OnMouseButtonPressed(EMouseButton button);
+    void OnMouseButtonRelease(EMouseButton button);
 
     TSubclassOf<class UItemSlotUI> GetItemSlotUI() const;
 
@@ -36,12 +41,28 @@ private:
     void SetItemStackSlot(int SlotID, FItemStack ItemStack);
     void UpdateItemStackCount(int SlotID, int Count);
 
+    //mouse button events
+    void LeftClickEvent();
+    void MiddleClickEvent();
+    void RightClickEvent();
+    void ScrollEvent(EMoveType MoveType);
+
+    void TryDropStackToSlot();
     void MoveStackToMouseSlot();
+    void StackMouseSlotToCurrentSlot();
     void SetMouseSlot(FItemStack ItemStack);
-    void ClearSlot();
+    void ClearSlot(int ID);
     void ClearMouseSlot();
     void SwapSlots();
-    void MoveCurrentStack();
+    void DropMouseSlotToCurrentSlot();
+    void SplitCurrentStack();
+    void SpreadMode();
+
+    FVector2D SplitStack(int ItemStackCount, int SlotCount);
+
+    //FItemStack GetCurrentItemStack() const { return ItemStackArray[CurrentItemSlotID]; }
+    bool CurrentSlotHasItem() { return ItemStackArray[CurrentItemSlotID].HasItem(); }
+    bool SlotsHasSameItem() { return ItemStackArray[CurrentItemSlotID].StringID == MouseItemStack.StringID; }
 
 protected:
     virtual void BeginPlay() override;
@@ -71,13 +92,14 @@ private:
     //TArray<struct FItemStack> ExternalItemStacks;
 
     bool bInventoryOpened = false;
-    bool bOnSplitMode = false;
 
     int CurrentItemSlotID = -1; //current slot
+    int MouseSlotID_Cache = -1; //current aux slot id, used in swap events
     int CurrentContainerID = -1; //container
-    
-    int Cached_CurrentItemSlotID = -1; //current slot aux
-    int Cached_CurrentContainerID = -1; //container aux
+
+    TArray<int> SplitSlotIDArray; //middle button drag
+    bool bOnSplitMode = false;
+    int SplitItemStackCount = -1;
 
     bool bMouseHasItem = false;
     bool bOutOfAreas = true;
