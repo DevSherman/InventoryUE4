@@ -11,8 +11,8 @@ struct FItemStack
 public:
 	void SetCount(int Amount) { Count = Amount; }
 	void UpdateCount(int Amount) { Count += Amount; }
-	bool HasItem() { return !StringID.IsEmpty(); }
-	bool IsFull() { return Count == MaxStack; }
+	bool HasItem() const { return !StringID.IsEmpty(); }
+	bool IsFull() const { return Count == MaxStack; }
 
 	inline void Clear()
 	{
@@ -29,7 +29,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	FString StringID;
 	UPROPERTY(EditAnywhere)
-	class AItemActor* ItemActor;
+	class AActor* ItemActor;
 	UPROPERTY(EditAnywhere)
 	bool bCanStack = false;
 	UPROPERTY(EditAnywhere)

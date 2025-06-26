@@ -35,6 +35,9 @@ public:
 
     TSubclassOf<class UItemSlotUI> GetItemSlotUI() const;
 
+    void LoadInventory();
+    void SaveInventory();
+
 private:
     UTexture2D* LoadIcon(FString StringID);
     bool CheckAvaliableSlot(struct FItemStack ItemStack);

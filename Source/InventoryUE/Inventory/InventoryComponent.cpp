@@ -99,6 +99,16 @@ TSubclassOf<class UItemSlotUI> UInventoryComponent::GetItemSlotUI() const
     return  BP_ItemSlotUI;
 }
 
+void UInventoryComponent::LoadInventory()
+{
+
+}
+
+void UInventoryComponent::SaveInventory()
+{
+
+}
+
 void UInventoryComponent::UpdateCurrentItemSlotSelected(int ID)
 {
     CurrentItemSlotID = ID;
@@ -201,12 +211,18 @@ void UInventoryComponent::LeftClickEvent()
 
 void UInventoryComponent::MiddleClickEvent()
 {
-    bOnSplitMode = true;
-
-    FItemStack currentStack = ItemStackArray[CurrentItemSlotID];
-    if (!currentStack.bCanStack && currentStack.Count <= 1) return;
-    SplitItemStackCount = currentStack.Count;
-    SplitCurrentStack();
+    if (bMouseHasItem) //spread
+    {
+        //SpreadMode();
+    }
+    else
+    {
+        bOnSplitMode = true;
+        FItemStack currentStack = ItemStackArray[CurrentItemSlotID];
+        if (!currentStack.bCanStack && currentStack.Count <= 1) return;
+        SplitItemStackCount = currentStack.Count;
+        SplitCurrentStack();
+    }
 }
 
 void UInventoryComponent::RightClickEvent()
@@ -263,7 +279,8 @@ void UInventoryComponent::SetMouseSlot(FItemStack ItemStack)
 
 void UInventoryComponent::ClearSlot(int ID)
 {
-    //TODO: check container
+    if (ID < 0) return;
+
     ItemStackArray[ID].Clear();
     ItemSlotUIArray[ID]->Clear();
 }
@@ -287,6 +304,7 @@ void UInventoryComponent::SwapSlots()
 void UInventoryComponent::DropMouseSlotToCurrentSlot()
 {
     SetItemStackSlot(CurrentItemSlotID, MouseItemStack);
+
     if (MouseSlotID_Cache != CurrentItemSlotID && !bOnSplitMode)  ClearSlot(MouseSlotID_Cache);
     ClearMouseSlot();
 }
@@ -302,7 +320,6 @@ void UInventoryComponent::SplitCurrentStack()
         currentStack.Count = splitAmount.Y;
         SetMouseSlot(currentStack);
     }
-    //else SpreadMode();
 }
 
 void UInventoryComponent::SpreadMode()
