@@ -179,6 +179,8 @@ bool UInventoryComponent::CheckAvaliableSlot(FItemStack ItemStack)
 
 void UInventoryComponent::SetItemStackSlot(int SlotID, FItemStack ItemStack)
 {
+    if (SlotID < 0) return;
+
     ItemStackArray[SlotID] = ItemStack;
     ItemSlotUIArray[SlotID]->Update(LoadIcon(ItemStack.StringID), ItemStack.Count);
 }
@@ -213,7 +215,7 @@ void UInventoryComponent::MiddleClickEvent()
 {
     if (bMouseHasItem) //spread
     {
-        //SpreadMode();
+        SpreadMode();
     }
     else
     {

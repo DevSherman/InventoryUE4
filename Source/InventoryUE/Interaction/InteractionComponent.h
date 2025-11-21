@@ -38,5 +38,5 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	AActor* CurrentActor;
 	UPROPERTY(VisibleAnywhere)
-	class AItemActor* ItemActor;
+	class AActor* ItemActor;
 };
